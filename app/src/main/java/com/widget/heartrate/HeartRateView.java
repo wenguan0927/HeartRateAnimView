@@ -27,13 +27,13 @@ public class HeartRateView extends View {
     private List<Integer> mSourceData = new ArrayList<>();
     // 心率曲线
     private Path mPath = new Path();
-    private float x, y, x2, y2, x3, y3, x4, y4;
+    private float x, y, x2, y2, x3, y3, x4, y4, lastPx, lastPy;
     //最小心率值
     private int mMinValue = 0;
     //最大心率值
-    private int mMaxValue = 220;
+    private int mMaxValue = 190;
     //屏幕上显示的最大的心率值个数
-    private int mMaxHearRateNumber = 20;
+    private int mMaxHearRateNumber = 60;
 
     private int mViewHeight;
 
@@ -76,10 +76,10 @@ public class HeartRateView extends View {
         TypedArray attributes = context.obtainStyledAttributes(attrs, R.styleable.HeartChartView,
                 defStyleAttr, defStyleRes);
 
-        mMinValue = attributes.getInteger(R.styleable.HeartChartView_minValue, 0);
-        mMaxValue = attributes.getInteger(R.styleable.HeartChartView_maxValue, 220);
+        mMinValue = attributes.getInteger(R.styleable.HeartChartView_minValue, 70);
+        mMaxValue = attributes.getInteger(R.styleable.HeartChartView_maxValue, 190);
 
-        mMaxHearRateNumber = attributes.getInteger(R.styleable.HeartChartView_maxHeartRateNum, 20);
+        mMaxHearRateNumber = attributes.getInteger(R.styleable.HeartChartView_maxHeartRateNum, 60);
         mMarginLeft = attributes.getDimension(R.styleable.HeartChartView_marginLeft, 5);
         mMarginRight = attributes.getDimension(R.styleable.HeartChartView_marginRight, 5);
         mMarginTop = attributes.getDimension(R.styleable.HeartChartView_marginTop, 5);
@@ -88,16 +88,10 @@ public class HeartRateView extends View {
         mStrokeWidth = attributes.getDimension(R.styleable.HeartChartView_strokeWidth, 5);
         mStrokeShadowWidth = attributes.getDimension(R.styleable.HeartChartView_strokeShadowWidth, 10);
         mStrokeColor = attributes.getColor(R.styleable.HeartChartView_strokeColor, Color.parseColor("#67E516"));
-        mStrokeShadowColor = attributes.getColor(R.styleable.HeartChartView_strokeShadowColor, Color.parseColor("#66A0F431"));
+        mStrokeShadowColor = attributes.getColor(R.styleable.HeartChartView_strokeShadowColor, Color.parseColor("#9964BC1C"));
         attributes.recycle();
 
         mValuePaint = new Paint();
-        mValuePaint.setAntiAlias(true);
-        mValuePaint.setStyle(Paint.Style.STROKE);
-        mValuePaint.setStrokeWidth(mStrokeWidth);
-        mValuePaint.setColor(mStrokeColor);
-        // 线条下方阴影
-        mValuePaint.setShadowLayer(10, 0, mStrokeShadowWidth, mStrokeShadowColor);
         initAnim();
     }
 
@@ -204,7 +198,17 @@ public class HeartRateView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        mValuePaint.setAntiAlias(true);
+        mValuePaint.setStyle(Paint.Style.STROKE);
+        mValuePaint.setStrokeWidth(mStrokeWidth);
+        mValuePaint.setColor(mStrokeColor);
+        // 线条下方阴影
+        mValuePaint.setShadowLayer(5, 0, 10, mStrokeShadowColor);
         canvas.drawPath(mPath, mValuePaint);
+        mValuePaint.reset();
+        mValuePaint.setColor(mStrokeColor);
+        // 绘制最右侧圆点
+        canvas.drawCircle(lastPx, lastPy, 6, mValuePaint);
     }
 
     /**
@@ -221,6 +225,8 @@ public class HeartRateView extends View {
             if (i == mSourceData.size() - 1) {
                 x4 = x;
                 y4 = y;
+                lastPx = x;
+                lastPy = y;
             } else {
                 x4 = mMarginLeft + mHearRateItemMargin * (i + 1) - offset;
                 y4 = getHearRateValueToViewHeight(mSourceData.get(i + 1));
@@ -244,7 +250,7 @@ public class HeartRateView extends View {
         } else if (value == mMaxValue) {
             return mMarginTop;
         } else {
-            return mMarginTop + (mViewHeight - mMarginTop - mMarginBottom - mStrokeShadowWidth) * 1.0f / (mMaxValue - mMinValue) * (value - mMinValue);
+            return mViewHeight - (mMarginBottom + (mViewHeight - mMarginTop - mMarginBottom - mStrokeShadowWidth) * 1.0f / (mMaxValue - mMinValue) * (value - mMinValue));
         }
     }
 }
